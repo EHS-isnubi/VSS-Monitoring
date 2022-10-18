@@ -3,7 +3,7 @@
 # NAME: GetPortStatusViaCsvImport.ps1
 # AUTHOR: GAMBART Louis
 # DATE: 24/01/2022
-# VERSION 1.12
+# VERSION 1.0
 #
 # =======================================================
 #
@@ -48,6 +48,7 @@ function getVSSusage {
 
 
 # ======================== SCRIPT =======================
+
 
 Write-Host "Starting script for $hostname"
 getVSSusage
