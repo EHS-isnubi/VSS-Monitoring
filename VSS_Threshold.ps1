@@ -1,8 +1,8 @@
 # =======================================================
 #
-# NAME: GetPortStatusViaCsvImport.ps1
+# NAME: VSS_Threshold.ps1
 # AUTHOR: GAMBART Louis
-# DATE: 24/01/2022
+# DATE: 18/10/2022
 # VERSION 1.0
 #
 # =======================================================
@@ -19,7 +19,7 @@
 
 
 # value of the threshold in Gb
-$threshold = "1"
+$threshold = "0"
 
 # get the name of the host
 $hostname = $env:COMPUTERNAME
