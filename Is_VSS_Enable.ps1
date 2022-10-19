@@ -2,8 +2,8 @@
 #
 # NAME: is_VSS_Enable.ps1
 # AUTHOR: GAMBART Louis
-# DATE: 18/10/2022
-# VERSION 1.2
+# DATE: 19/10/2022
+# VERSION 1.3
 #
 # =======================================================
 #
@@ -12,6 +12,7 @@
 # 1.0: Initial version
 # 1.1: Add the mail sending function
 # 1.2: Add the language check function to check if it is in english or french
+# 1.3: Refactor code, add try/catch for the MailMessage sending
 #
 # =======================================================
 
@@ -20,60 +21,81 @@
 # ====================== VARIABLES ======================
 
 
+# clear $error variable
+$error.clear()
+
 # get the name of the host
 $hostname = $env:COMPUTERNAME
 
 # cmdlet to execute
 $vss = cmd.exe /c "vssadmin list ShadowStorage"
 
-# Mail variables
-[String] $Emailing_SmtpServer = "smtp_server"
-[String] $Emailing_Subject = '[VSS Monitoring]'
-[String] $Emailing_From = 'sender mail'
-
-# Test mail
-[Array] $Emailing_To = 'test mail address'
-[Array] $Emailing_Cc = 'copy test mail address'
-# Prod mail
-#[Array] $Emailing_To = 'prod mail address','prod mail address 2'
-#[Array] $Emailing_CC = 'copy prod mail address'
-
-# Mail body
-$Emailing_Body = "
-    Hello,
-
+# mail attributes
+$mail = @{
+    # Test mail
+    To = 'test mail'
+    Cc = 'copy test mail'
+    # Prod mail
+    # To = 'prod mail', 'prod mail 2'
+    # Cc = 'copy prod mail' 
+    From = 'sender mail'
+    Subject = '[VSS Monitoring]'
+    Body = "Hello,
     The server $hostname don't have VSS enable.
-
     Do not reply to this email, it is automatically generated.
     Cordially,
     The Windows monitoring team."
+    SmtpServer = 'smtp server'
+    ErrorAction = 'Stop'
+}
 
-# Mail encoding
-$Emailing_Encoding = [System.Text.Encoding]::UTF8
-
+# mail encoding
+$emailingEncoding = [System.Text.Encoding]::UTF8
 
 # ====================== FUNCTIONS ======================
 
 
-function checkSystemLanguage {
+function Get-System-Language {
+    <#
+    .SYNOPSIS
+    Get the local system language
+    .DESCRIPTION
+    The Get-System-Language enables you to get the current local system language
+    .INPUTS
+    None.
+    .OUTPUTS
+    System.String: return the system language
+    #>
+    [CmdletBinding()]
     $systemLanguage = (Get-WinSystemLocale).Name
     return $systemLanguage
 }
 
 
-function isVSSenable {
+function Get-VSS-Status {
+    <#
+    .SYNOPSIS
+    Check if VSS service is enable on a host
+    .DESCRIPTION
+    The Get-VSS-Status function enable to know if the VSS service is enable on a host.
+    .INPUTS
+    vssadmin cmdlet query reply
+    .OUTPUTS
+    System.Int32: return 0 or 1 according to the status of the service
+    #>
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
         $vss
     )
-    if (checkSystemLanguage -eq "fr-FR") {
-        $vssmatch = "^(Il n'existe aucun )"
+    if (Get-System-Language -eq "fr-FR") {
+        $vssMatch = "^(Il n'existe aucun )"
     }
-    elseif (checkSystemLanguage -eq "en-US") {
-        $vssmatch = "No shadow copies are configured"
+    elseif (Get-System-Language -eq "en-US") {
+        $vssMatch = "No shadow copies are configured"
     }
 
-    if ($vss -match $vssmatch) {
+    if ($vss -match $vssMatch) {
         Write-Host "VSS is not enable"
         return 1
     }
@@ -98,7 +120,7 @@ function isVSSenable {
 
 
 Write-Host "Starting script for $hostname"
-$result = isVSSenable -vss $vss
+$result = Get-VSS-Status -vss $vss
 
 
 # ====================== END SCRIPT =====================
@@ -111,8 +133,15 @@ $result = isVSSenable -vss $vss
 # Send mail if VSS is not enable
 if ($result -eq 1)
 {
-    Send-MailMessage -From $Emailing_From -To $Emailing_To -Cc $Emailing_Cc -SmtpServer $Emailing_SmtpServer -Subject $Emailing_Subject -Body $Emailing_Body -Encoding $Emailing_Encoding
-    Write-Host "Mail sent"
+    try {
+        Send-MailMessage @mail -Encoding $emailingEncoding
+    }
+    catch {
+        Write-Host $_ -ForegroundColor Red
+    }
+    if (!$error) {
+        Write-Host "Mail sent"
+    }
     exit 1
 }
 else {
