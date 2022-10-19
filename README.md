@@ -55,8 +55,7 @@ The first script enables you to monitor the disk space used by the VSS service. 
 
 *Thanks to Kelvin Tegelaar who created the initial version I used as a base for this project: https://www.cyberdrain.com/monitoring-with-powershell-vss-snapshot-size/*<br>
 
-
-The second script enables you to check if the VSS service is enable on a server. If it is not, it will send an email to prevent you from having a problem with the VSS service.
+<br>The second script enables you to check if the VSS service is enable on a server. If it is not, it will send an email to prevent you from having a problem with the VSS service.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
