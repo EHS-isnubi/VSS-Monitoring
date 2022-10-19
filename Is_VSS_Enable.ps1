@@ -3,7 +3,7 @@
 # NAME: is_VSS_Enable.ps1
 # AUTHOR: GAMBART Louis
 # DATE: 19/10/2022
-# VERSION 1.3
+# VERSION 1.3.2
 #
 # =======================================================
 #
@@ -13,6 +13,8 @@
 # 1.1: Add the mail sending function
 # 1.2: Add the language check function to check if it is in english or french
 # 1.3: Refactor code, add try/catch for the MailMessage sending
+# 1.3.1: Add exit code when error is catched during the mail sending
+# 1.3.2: Add print of the maximum space that can be used by VSS
 #
 # =======================================================
 
@@ -107,10 +109,12 @@ function Get-VSS-Status {
             }
             if ($line -match "Used Shadow Copy Storage space: (.*) GB") { $used = $matches[1] }
             if ($line -match "Allocated Shadow Copy Storage space: (.*) GB") { $allocated = $matches[1] }
+            if ($line -match "Maximum Shadow Copy Storage space: (.*) GB") { $maximum = $matches[1]}
         }
         Write-Host "VSS is enable on $drive drive and volume $volume"
         Write-Host "Used space: $used GB"
         Write-Host "Allocated space: $allocated GB"
+        Write-Host "Maximum space usable by VSS: $maximum"
         return 0
     }
 }
@@ -138,6 +142,7 @@ if ($result -eq 1)
     }
     catch {
         Write-Host $_ -ForegroundColor Red
+        exit 2
     }
     if (!$error) {
         Write-Host "Mail sent"
