@@ -1,6 +1,1 @@
-.idea/.gitignore
-.idea/discord.xml
-.idea/misc.xml
-.idea/modules.xml
-.idea/vcs.xml
-.idea/VSS-Monitoring.iml
+.idea/*
