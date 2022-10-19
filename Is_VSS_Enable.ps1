@@ -15,6 +15,7 @@
 # 1.3: Refactor code, add try/catch for the MailMessage sending
 # 1.3.1: Add exit code when error is catched during the mail sending
 # 1.3.2: Add print of the maximum space that can be used by VSS
+# 1.4: Change language check verification
 #
 # =======================================================
 
@@ -93,7 +94,7 @@ function Get-VSS-Status {
     if (Get-System-Language -eq "fr-FR") {
         $vssMatch = "^(Il n'existe aucun )"
     }
-    elseif (Get-System-Language -eq "en-US") {
+    else {
         $vssMatch = "No shadow copies are configured"
     }
 
