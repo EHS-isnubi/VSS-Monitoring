@@ -78,8 +78,10 @@ To use this script, you need to:
 * Run the script:
     * You may authorize the script to run by running the following command in an elevated PowerShell prompt:
     ```powershell
-    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
+    Set-ExecutionPolicy -ExecutionPolicy Unrestricted
     ```
+    and press `y` to accept once<br>
+    
     * Run it in an elevated PowerShell prompt:
     ```powershell
     .\VSS-Threshold.ps1
