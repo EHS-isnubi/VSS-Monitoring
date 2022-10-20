@@ -2,8 +2,8 @@
 #
 # NAME: is_VSS_Enable.ps1
 # AUTHOR: GAMBART Louis
-# DATE: 19/10/2022
-# VERSION 1.3.2
+# DATE: 20/10/2022
+# VERSION 1.5
 #
 # =======================================================
 #
@@ -16,6 +16,7 @@
 # 1.3.1: Add exit code when error is catched during the mail sending
 # 1.3.2: Add print of the maximum space that can be used by VSS
 # 1.4: Change language check verification
+# 1.5: Remove exit code for Centreon (this script already send mail and don't will be use with Centreon)
 #
 # =======================================================
 
@@ -143,23 +144,10 @@ if ($result -eq 1)
     }
     catch {
         Write-Host $_ -ForegroundColor Red
-        exit 2
     }
     if (!$error) {
         Write-Host "Mail sent"
     }
-    exit 1
 }
-else {
-    exit 0
-}
-
 
 # ======================= END MAIL ======================
-
-
-# ======================= CENTREON ======================
-
-# 0: OK
-# 1: WARNING
-# 2: CRITICAL
