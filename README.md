@@ -57,6 +57,8 @@ The first script enables you to monitor the disk space used by the VSS service. 
 
 <br>The second script enables you to check if the VSS service is enable on a server. If it is not, it will send an email to prevent you from having a problem with the VSS service.
 
+<br>The third srcipt enables you to activate the VSS service on a volume.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -86,6 +88,7 @@ To use this script, you need to:
     ```powershell
     .\VSS-Threshold.ps1
     .\is_VSS_Enable.ps1
+    .\Enable_VSS.ps1
     ```
 
 
