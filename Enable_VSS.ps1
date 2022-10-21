@@ -50,7 +50,7 @@ function Get-Device-ID {
         [Parameter(Mandatory=$true)]
         [string]$DiskName
     )
-    $volumeWMI = Get-WmiObject win32_volume -Namespace root/cimv2 | Where-Object $_.Name -eq $DiskName
+    $volumeWMI = Get-WmiObject Win32_Volume -Namespace root/cimv2 | ?{ $_.Name -eq $DiskName }
     $deviceID = $volumeWMI.DeviceID.toUpper().Replace("\\?\Volume", "").Replace("\", "")
     return $deviceID
 }
@@ -78,10 +78,13 @@ function Enable-VSS {
         [String]$Arguments,
         [String]$TaskName
     )
-    $scheduledAction = New-ScheduledTaskAction -Execute $Task -Argument $Arguments -WorkingDirectory $WorkingDirectory
+    $scheduledAction = New-ScheduledTaskAction -Execute $Task -Argument $Arguments `
+    -WorkingDirectory $WorkingDirectory
     $scheduledTrigger = New-ScheduledTaskTrigger -AtLogOn
-    $scheduledSettings = New-ScheduledTaskSettingsSet -Compatibility DontStopOnIdleEnd -ExecutionTimeLimit (New-TimeSpan -Minutes 30) -Priority 5
-    $scheduledTask = New-ScheduledTask -Action $scheduledAction -Trigger $scheduledTrigger -Settings $scheduledSettings
+    $scheduledSettings = New-ScheduledTaskSettingsSet -Compatibility V1 -DontStopOnIdleEnd -ExecutionTimeLimit `
+    (New-TimeSpan -Minutes 30) -Priority 5
+    $scheduledTask = New-ScheduledTask -Action $scheduledAction -Trigger $scheduledTrigger `
+    -Settings $scheduledSettings
     Register-ScheduledTask $TaskName -InputObject $scheduledTask -User "NT AUTHORITY\SYSTEM"
 }
 
