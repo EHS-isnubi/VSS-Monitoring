@@ -49,15 +49,10 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-This project is a monitoring tool for the [VSS service](https://learn.microsoft.com/en-us/windows-server/storage/file-server/volume-shadow-copy-service).
+This project is some monitoring tools for the [VSS service](https://learn.microsoft.com/en-us/windows-server/storage/file-server/volume-shadow-copy-service).
 
-The first script enables you to monitor the disk space used by the VSS service. You can specify a threshold to see if the disk space used by the VSS service is above or below the threshold.
+The tools enable you to check the status of the VSS service and enable it if it is disabled.
 
-*Thanks to Kelvin Tegelaar who created the initial version I used as a base for this project: https://www.cyberdrain.com/monitoring-with-powershell-vss-snapshot-size/*<br>
-
-<br>The second script enables you to check if the VSS service is enable on a server. If it is not, it will send an email to prevent you from having a problem with the VSS service.
-
-<br>The third srcipt enables you to activate the VSS service on a volume.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -89,6 +84,7 @@ To use this script, you need to:
     .\VSS-Threshold.ps1
     .\is_VSS_Enable.ps1
     .\Enable_VSS.ps1
+    ...
     ```
 
 
