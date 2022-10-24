@@ -1,3 +1,4 @@
+#Requires -RunAsAdministrator
 # =======================================================
 #
 # NAME: Enable_VSS.ps1
@@ -32,23 +33,6 @@ $diskName = "C:\"
 # ====================== FUNCTIONS ======================
 
 
-function Get-System-Language {
-    <#
-    .SYNOPSIS
-    Get the local system language
-    .DESCRIPTION
-    The Get-System-Language enables you to get the current local system language
-    .INPUTS
-    None.
-    .OUTPUTS
-    System.String: return the system language
-    #>
-    [CmdletBinding()]
-    $systemLanguage = (Get-WinSystemLocale).Name
-    return $systemLanguage
-}
-
-
 function Check-VSS {
     <#
     .SYNOPSIS
@@ -67,7 +51,7 @@ function Check-VSS {
         $VSS,
         [String]$DiskName
     )
-    if (Get-System-Language -eq "fr-FR") {
+    if ($PSUICulture -eq "fr_FR") {
         if ($vss -match "^(Il n'existe aucun )") {
             return $false
         }

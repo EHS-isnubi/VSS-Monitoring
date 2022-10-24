@@ -31,23 +31,6 @@ $vss = cmd.exe /c "vssadmin list ShadowStorage"
 # ====================== FUNCTIONS ======================
 
 
-function Get-System-Language {
-    <#
-    .SYNOPSIS
-    Get the local system language
-    .DESCRIPTION
-    The Get-System-Language enables you to get the current local system language
-    .INPUTS
-    None.
-    .OUTPUTS
-    System.String: return the system language
-    #>
-    [CmdletBinding()]
-    $systemLanguage = (Get-WinSystemLocale).Name
-    return $systemLanguage
-}
-
-
 function Get-VSS-Status {
     <#
     .SYNOPSIS
@@ -64,7 +47,7 @@ function Get-VSS-Status {
         [Parameter(Mandatory=$true)]
         $vss
     )
-    if (Get-System-Language -eq "fr-FR") {
+    if ($PSUICulture -eq "fr-FR") {
         $vssMatch = "^(Il n'existe aucun )"
     }
     else {
