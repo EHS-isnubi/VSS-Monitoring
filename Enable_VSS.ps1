@@ -2,14 +2,15 @@
 #
 # NAME: Enable_VSS.ps1
 # AUTHOR: GAMBART Louis
-# DATE: 21/10/2022
-# VERSION 1.0
+# DATE: 24/10/2022
+# VERSION 1.1
 #
 # =======================================================
 #
 # CHANGELOG
 #
 # 1.0: Initial version
+# 1.1: Change to work on all Windows versions (not only on windows server)
 #
 # =======================================================
 
@@ -24,35 +25,76 @@ $error.clear()
 # get the name of the host
 $hostname = $env:COMPUTERNAME
 
-
-# variable for the cmdlet
-$task = "C:\Windows\System32\vssadmin.exe"
-$workingDir = "%systemroot%\system32"
-$taskName = "Enable VSS on host"
+# the disk to enable VSS on
+$diskName = "C:\"
 
 
 # ====================== FUNCTIONS ======================
 
 
-function Get-Device-ID {
+function Get-System-Language {
     <#
     .SYNOPSIS
-    Get the device ID of the disk
+    Get the local system language
     .DESCRIPTION
-    Get the device ID of the disk
+    The Get-System-Language enables you to get the current local system language
     .INPUTS
-    diskname (string)
+    None.
     .OUTPUTS
-    deviceID (string)
+    System.String: return the system language
+    #>
+    [CmdletBinding()]
+    $systemLanguage = (Get-WinSystemLocale).Name
+    return $systemLanguage
+}
+
+
+function Check-VSS {
+    <#
+    .SYNOPSIS
+    Check if VSS is enabled on the host
+    .DESCRIPTION
+    Check if VSS is enabled on the host through WMI Shadow Copy Object
+    .INPUTS
+    VSS (cmdlet query)
+    DiskName (string)
+    .OUTPUTS
+    Boolean: return true if VSS is enabled on the host
     #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
-        [string]$DiskName
+        $VSS,
+        [String]$DiskName
     )
-    $volumeWMI = Get-WmiObject Win32_Volume -Namespace root/cimv2 | ?{ $_.Name -eq $DiskName }
-    $deviceID = $volumeWMI.DeviceID.toUpper().Replace("\\?\Volume", "").Replace("\", "")
-    return $deviceID
+    if (Get-System-Language -eq "fr-FR") {
+        if ($vss -match "^(Il n'existe aucun )") {
+            return $false
+        }
+        else {
+            foreach ($line in $vss) {
+                if ($line -match "Pour le volume : \(?(C):\)\\\\\?\\Volume{(?<volume>[a-z0-9-]+)}\\") {
+                    return $true
+                    break
+                }
+            }
+            return $false
+        }
+    }
+    else {
+        if ($vss -match "No shadow copies are configured") {
+            return $false
+        }
+        else {
+            foreach ($line in $vss) {
+                if ($line -match "For volume: \(?(C):\)\\\\\?\\Volume{(?<volume>[a-z0-9-]+)}\\") {
+                    return $true
+                    break
+                }
+            }
+            return $false
+        }
+    }
 }
 
 
@@ -61,31 +103,19 @@ function Enable-VSS {
     .SYNOPSIS
     Enable VSS on the host
     .DESCRIPTION
-    Enable VSS on the host through scheduled task and vssadmin cmdlet
+    Enable VSS on the host through WMI Shadow Copy Object
     .INPUTS
-    TaskName (string)
-    Task (string)
-    WorkingDir (string)
-    Arguments (string)
+    DiskName (string)
     .OUTPUTS
     None.
     #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
-        [String]$Task,
-        [String]$WorkingDirectory,
-        [String]$Arguments,
-        [String]$TaskName
+        [String]$DiskName
     )
-    $scheduledAction = New-ScheduledTaskAction -Execute $Task -Argument $Arguments `
-    -WorkingDirectory $WorkingDirectory
-    $scheduledTrigger = New-ScheduledTaskTrigger -AtLogOn
-    $scheduledSettings = New-ScheduledTaskSettingsSet -Compatibility V1 -DontStopOnIdleEnd -ExecutionTimeLimit `
-    (New-TimeSpan -Minutes 30) -Priority 5
-    $scheduledTask = New-ScheduledTask -Action $scheduledAction -Trigger $scheduledTrigger `
-    -Settings $scheduledSettings
-    Register-ScheduledTask $TaskName -InputObject $scheduledTask -User "NT AUTHORITY\SYSTEM"
+    $VssWmi = Get-WmiObject -List Win32_ShadowCopy
+    $VssWmi.Create($DiskName, "ClientAccessible")
 }
 
 
@@ -93,10 +123,22 @@ function Enable-VSS {
 
 
 Write-Host "Starting script on $hostname"
-$deviceID = Get-Device-ID -diskName "C:\"
-$taskFor = "\\?\Volume" + $deviceID  + "\"
-$taskArgument = "create shadowstorage /autoretry=15 /for=$taskFor"
-Enable-VSS -Task $task -WorkingDirectory $workingDir -Arguments $taskArgument -TaskName $taskName
+$vss = cmd.exe /c 'vssadmin list ShadowStorage'
+if (Check-VSS -VSS $vss -DiskName $diskName.Substring(0,2)) {
+    Write-Host "VSS is already enable on $diskName"
+}
+else {
+    Write-Host "VSS is not enable on $diskName"
+    Write-Host "Enabling VSS on $diskName"
+    Enable-VSS -DiskName $diskName
+    $vss = cmd.exe /c 'vssadmin list ShadowStorage'
+    if (Check-VSS -VSS $vss -DiskName $diskName.Substring(0,2)) {
+        Write-Host "VSS is now enable on $diskName"
+    }
+    else {
+        Write-Host "VSS can't be enable on $diskName"
+    }
+}
 
 
 # ====================== END SCRIPT =====================
