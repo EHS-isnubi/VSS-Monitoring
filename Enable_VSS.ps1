@@ -33,7 +33,7 @@ $diskName = "C:\"
 # ====================== FUNCTIONS ======================
 
 
-function Check-VSS {
+function Get-VSS-Status {
     <#
     .SYNOPSIS
     Check if VSS is enabled on the host
@@ -108,7 +108,7 @@ function Enable-VSS {
 
 Write-Host "Starting script on $hostname"
 $vss = cmd.exe /c 'vssadmin list ShadowStorage'
-if (Check-VSS -VSS $vss -DiskName $diskName.Substring(0,2)) {
+if (Get-VSS-Status -VSS $vss -DiskName $diskName.Substring(0,2)) {
     Write-Host "VSS is already enable on $diskName"
 }
 else {
@@ -116,7 +116,7 @@ else {
     Write-Host "Enabling VSS on $diskName"
     Enable-VSS -DiskName $diskName
     $vss = cmd.exe /c 'vssadmin list ShadowStorage'
-    if (Check-VSS -VSS $vss -DiskName $diskName.Substring(0,2)) {
+    if (Get-VSS-Status -VSS $vss -DiskName $diskName.Substring(0,2)) {
         Write-Host "VSS is now enable on $diskName"
     }
     else {
