@@ -4,7 +4,7 @@
 # NAME: Enable_VSS.ps1
 # AUTHOR: GAMBART Louis
 # DATE: 25/10/2022
-# VERSION 1.3.2
+# VERSION 1.4
 #
 # =======================================================
 #
@@ -16,6 +16,7 @@
 # 1.3: Add begin, process and end blocks to the functions
 # 1.3.1: Add try/catch for the mail sending
 # 1.3.2: Add datetime to the mail body and console output
+# 1.4: Add function to write clean logs in the console
 #
 # =======================================================
 
@@ -82,6 +83,44 @@ function Get-Datetime {
 }
 
 
+function Write-Log {
+    <#
+    .SYNOPSIS
+    Write log message in the console
+    .DESCRIPTION
+    Write log message in the console
+    .INPUTS
+    System.String: The message to write
+    System.String: The log level
+    .OUTPUTS
+    None
+    .EXAMPLE
+    Write-Log "Hello world" "Verbose"
+    VERBOSE: Hello world
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Message,
+        [Parameter(Mandatory = $false, Position = 1)]
+        [ValidateSet('Error', 'Warning', 'Information', 'Verbose', 'Debug')]
+        [string]$LogLevel = 'Information'
+    )
+    begin {}
+    process {
+        switch ($LogLevel) {
+            'Error' { Write-Error $Message -ErrorAction Stop }
+            'Warning' { Write-Warning $Message -WarningAction Continue }
+            'Information' { Write-Information $Message -InformationAction Continue }
+            'Verbose' { Write-Verbose $Message -Verbose }
+            'Debug' { Write-Debug $Message -Debug Continue }
+            default { throw "Invalid log level: $_" }
+        }
+    }
+    end {}
+}
+
 function Get-VSS-Status {
     <#
     .SYNOPSIS
@@ -98,7 +137,7 @@ function Get-VSS-Status {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, Position=0)]
         [String]$DiskName
     )
     begin { $vss = cmd.exe /c 'vssadmin list ShadowStorage' }
@@ -145,7 +184,7 @@ function Enable-VSS {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, Position=0)]
         [String]$DiskName
     )
     $VssWmi = Get-WmiObject -List Win32_ShadowCopy
@@ -155,24 +194,19 @@ function Enable-VSS {
 
 # ======================== SCRIPT =======================
 
+Write-Log "Starting script on $hostname at $(Get-Datetime)" 'Verbose'
 
-Write-Host "Starting script on $hostname at $(Get-Datetime)" -ForegroundColor Green
-
-if (Get-VSS-Status -DiskName $diskName.Substring(0,1)) {
-    Write-Host "VSS is already enable on $diskName"
-}
+if (Get-VSS-Status -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is already enabled on $diskName" 'Information' }
 else {
-    Write-Host "VSS is not enable on $diskName"
-    Write-Host "Enabling VSS on $diskName"
+    Write-Log "VSS is not enabled on $diskName" 'Information'
+    Write-Log "Trying to enable VSS on $diskName" 'Verbose'
     Enable-VSS -DiskName $diskName
-    if (Get-VSS-Status -DiskName $diskName.Substring(0,1)) {
-        Write-Host "VSS is now enable on $diskName"
-    }
+    if (Get-VSS-Status -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is now enabled on $diskName" 'Information' }
     else {
-        Write-Host "VSS can't be enable on $diskName"
+        Write-Log "VSS couldn't be enabled on $diskName" 'Warning'
         try { Send-MailMessage @mail -Encoding $emailingEncoding }
-        catch { Write-Host $_ -ForegroundColor Red }
-        if (!$error) { Write-Host "Mail sent" }
+        catch { Write-Log "Error while sending mail: $_" 'Error' }
+        if (!$error) { Write-Log "Mail sent" 'Verbose' }
     }
 }
 
