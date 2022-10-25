@@ -1,10 +1,14 @@
 #Requires -RunAsAdministrator
+param(
+    [Parameter(Mandatory=$true, Position=0)]
+    [string]$diskName
+)
 # =======================================================
 #
 # NAME: Enable_VSS.ps1
 # AUTHOR: GAMBART Louis
 # DATE: 25/10/2022
-# VERSION 1.4
+# VERSION 1.5.1
 #
 # =======================================================
 #
@@ -17,6 +21,8 @@
 # 1.3.1: Add try/catch for the mail sending
 # 1.3.2: Add datetime to the mail body and console output
 # 1.4: Add function to write clean logs in the console
+# 1.5: Add control on the drive letter
+# 1.5.1: Pass the drive letter to the script
 #
 # =======================================================
 
@@ -30,9 +36,6 @@ $error.clear()
 
 # get the name of the host
 $hostname = $env:COMPUTERNAME
-
-# the disk to enable VSS on
-$diskName = "C:\"
 
 # mail attributes
 $mail = @{
@@ -121,6 +124,7 @@ function Write-Log {
     end {}
 }
 
+
 function Get-VSS-Status {
     <#
     .SYNOPSIS
@@ -196,17 +200,20 @@ function Enable-VSS {
 
 Write-Log "Starting script on $hostname at $(Get-Datetime)" 'Verbose'
 
-if (Get-VSS-Status -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is already enabled on $diskName" 'Information' }
+if (!(Test-Path $diskName)) { Write-Log "The disk $diskName doesn't exist on the host $hostname" 'Warning' }
 else {
-    Write-Log "VSS is not enabled on $diskName" 'Information'
-    Write-Log "Trying to enable VSS on $diskName" 'Verbose'
-    Enable-VSS -DiskName $diskName
-    if (Get-VSS-Status -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is now enabled on $diskName" 'Information' }
+    if (Get-VSS-Status -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is already enabled on $diskName" 'Information' }
     else {
-        Write-Log "VSS couldn't be enabled on $diskName" 'Warning'
-        try { Send-MailMessage @mail -Encoding $emailingEncoding }
-        catch { Write-Log "Error while sending mail: $_" 'Error' }
-        if (!$error) { Write-Log "Mail sent" 'Verbose' }
+        Write-Log "VSS is not enabled on $diskName" 'Information'
+        Write-Log "Trying to enable VSS on $diskName" 'Verbose'
+        Enable-VSS -DiskName $diskName
+        if (Get-VSS-Status -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is now enabled on $diskName" 'Information' }
+        else {
+            Write-Log "VSS couldn't be enabled on $diskName" 'Warning'
+            try { Send-MailMessage @mail -Encoding $emailingEncoding }
+            catch { Write-Log "Error while sending mail: $_" 'Error' }
+            if (!$error) { Write-Log "Mail sent" 'Verbose' }
+        }
     }
 }
 
