@@ -3,8 +3,8 @@
 #
 # NAME: Enable_VSS.ps1
 # AUTHOR: GAMBART Louis
-# DATE: 24/10/2022
-# VERSION 1.1
+# DATE: 25/10/2022
+# VERSION 1.3.2
 #
 # =======================================================
 #
