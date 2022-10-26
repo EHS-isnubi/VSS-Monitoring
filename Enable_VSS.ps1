@@ -8,7 +8,7 @@ param(
 # NAME: Enable_VSS.ps1
 # AUTHOR: GAMBART Louis
 # DATE: 26/10/2022
-# VERSION 1.6
+# VERSION 1.7
 #
 # =======================================================
 #
@@ -25,6 +25,8 @@ param(
 # 1.5.1: Pass the drive letter to the script
 # 1.5.2: Rename function Get-VSS-Status to Test-VSS
 # 1.6: Add system type check (workstation or server)
+# 1.6.1 Change error message on diskname parameter control
+# 1.7: change mail body and subject
 #
 # =======================================================
 
@@ -38,26 +40,6 @@ $error.clear()
 
 # get the name of the host
 $hostname = $env:COMPUTERNAME
-
-# mail attributes
-$mail = @{
-    # Test mail
-    To = 'test mail'
-    Cc = 'copy test mail'
-    # Prod mail
-    # To = 'prod mail', 'prod mail 2'
-    # Cc = 'copy prod mail'
-    From = 'sender mail'
-    Subject = '[VSS Monitoring]'
-    Body = "Hello,
-    The VSS service couldn't be activated on the server $hostname.
-    The test was done on the disk $diskName.
-    Do not reply to this email, it is automatically generated.
-    Cordially,
-    The Windows monitoring team."
-    SmtpServer = 'smtp server'
-    ErrorAction = 'Stop'
-}
 
 # mail encoding
 $emailingEncoding = [System.Text.Encoding]::UTF8
@@ -223,9 +205,33 @@ function Enable-VSS {
 }
 
 
+# ====================== MAIL ARGS ======================
+
+
+# mail attributes
+$mail = @{
+    # Test mail
+    To = 'test mail'
+    Cc = 'copy test mail'
+    # Prod mail
+    # To = 'prod mail', 'prod mail 2'
+    # Cc = 'copy prod mail'
+    From = 'sender mail'
+    Subject = "[VSS Monitoring] $hostname - $(Get-Datetime)"
+    Body = "Hello,
+        The VSS service couldn't be activated on the $(Get-SystemType) $hostname at $(Get-Datetime).
+        The test was done on the disk $diskName.
+        Do not reply to this email, it is automatically generated.
+        Cordially,
+        The Windows monitoring team."
+    SmtpServer = 'smtp server'
+    ErrorAction = 'Stop'
+}
+
+
 # ======================== SCRIPT =======================
 
-if ($diskName -notmatch "^([a-zA-Z]:\\)") { Write-Log "The disk name is not valid: please enter it like C:\" -LogLevel 'Error' }
+if ($diskName -notmatch "^([a-zA-Z]:\\)$") { Write-Log "The disk name is not valid: please enter it like C:\" -LogLevel 'Error' }
 
 Write-Log "Starting script on $hostname ($(Get-SystemType)) at $(Get-Datetime)" 'Verbose'
 
