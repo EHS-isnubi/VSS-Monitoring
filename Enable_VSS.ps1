@@ -8,7 +8,7 @@ param(
 # NAME: Enable_VSS.ps1
 # AUTHOR: GAMBART Louis
 # DATE: 26/10/2022
-# VERSION 1.7
+# VERSION 1.8
 #
 # =======================================================
 #
@@ -29,6 +29,7 @@ param(
 # 1.7: change mail body and subject
 # 1.7.1: Change order of script execution
 # 1.7.2: Modify get system type function
+# 1.8: Add volume resize action when enabling VSS
 #
 # =======================================================
 
@@ -43,7 +44,14 @@ $error.clear()
 # get the name of the host
 $hostname = $env:COMPUTERNAME
 
-# mail encoding
+# max VSS volume size
+$maxVSSVolumeSize = "500000MB"
+
+# mail variables
+$emailingTo = ""
+$emailingCc = ""
+$emailingFrom = ""
+$emailingSMTPServer = ""
 $emailingEncoding = [System.Text.Encoding]::UTF8
 
 
@@ -195,16 +203,20 @@ function Enable-VSS {
     Enable VSS on the host through WMI Shadow Copy Object
     .INPUTS
     System.String: DiskName
+    System.String: maxVSSSize
     .OUTPUTS
     None.
     #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true, Position=0)]
-        [String]$DiskName
+        [String]$DiskName,
+        [Parameter(Mandatory=$true, Position=1)]
+        [String]$MaximumSize
     )
     $VssWmi = Get-WmiObject -List Win32_ShadowCopy
     $VssWmi.Create($DiskName, "ClientAccessible")
+    cmd.exe /c "vssadmin resize shadowstorage /for=$($DiskName.Substring(0,2)) /on=$($DiskName.Substring(0,2)) /maxsize=$MaximumSize"
 }
 
 
@@ -213,13 +225,9 @@ function Enable-VSS {
 
 # mail attributes
 $mail = @{
-    # Test mail
-    To = 'test mail'
-    Cc = 'copy test mail'
-    # Prod mail
-    # To = 'prod mail', 'prod mail 2'
-    # Cc = 'copy prod mail'
-    From = 'sender mail'
+    To = $emailingTo
+    Cc = $emailingCc
+    From = $emailingFrom
     Subject = "[VSS Monitoring] $hostname - $(Get-Datetime)"
     Body = "Hello,
         The VSS service couldn't be activated on the $(Get-SystemType) $hostname at $(Get-Datetime).
@@ -227,7 +235,7 @@ $mail = @{
         Do not reply to this email, it is automatically generated.
         Cordially,
         The Windows monitoring team."
-    SmtpServer = 'smtp server'
+    SmtpServer = $emailingSMTPServer
     ErrorAction = 'Stop'
 }
 
@@ -244,7 +252,7 @@ else {
     else {
         Write-Log "VSS is not enabled on $diskName" 'Information'
         Write-Log "Trying to enable VSS on $diskName" 'Verbose'
-        Enable-VSS -DiskName $diskName
+        Enable-VSS -DiskName $diskName -MaximumSize $maxVSSVolumeSize
         if (Test-VSS -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is now enabled on $diskName" 'Information' }
         else {
             Write-Log "VSS couldn't be enabled on $diskName" 'Warning'
