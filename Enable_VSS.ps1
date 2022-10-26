@@ -93,7 +93,7 @@ function Get-SystemType {
         if ($info.'OS Name' -match "^(Microsoft Windows ?(Server))") { return 'Server' }
         elseif ($info.'OS Name' -match "^(Microsoft Windows ?([0-9]{1,2}))") { return 'Workstation' }
         else { return 'Unknow' }
-        }
+    }
     end {}
 }
 
