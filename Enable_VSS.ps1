@@ -28,6 +28,7 @@ param(
 # 1.6.1 Change error message on diskname parameter control
 # 1.7: change mail body and subject
 # 1.7.1: Change order of script execution
+# 1.7.2: Modify get system type function
 #
 # =======================================================
 
@@ -90,8 +91,9 @@ function Get-SystemType {
     begin { $info = systeminfo /fo csv | ConvertFrom-Csv | Select-Object OS* }
     process {
         if ($info.'OS Name' -match "^(Microsoft Windows ?(Server))") { return 'Server' }
-        else { return 'Workstation' }
-    }
+        elseif ($info.'OS Name' -match "^(Microsoft Windows ?([0-9]{1,2}))") { return 'Workstation' }
+        else { return 'Unknow' }
+        }
     end {}
 }
 
