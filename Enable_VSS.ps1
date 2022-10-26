@@ -225,7 +225,7 @@ function Enable-VSS {
 
 # ======================== SCRIPT =======================
 
-if ($diskName -notmatch "^([a-zA-Z]:\\)") { Write-Log "The disk name is not valid" -LogLevel 'Error' }
+if ($diskName -notmatch "^([a-zA-Z]:\\)") { Write-Log "The disk name is not valid: please enter it like C:\" -LogLevel 'Error' }
 
 Write-Log "Starting script on $hostname ($(Get-SystemType)) at $(Get-Datetime)" 'Verbose'
 
