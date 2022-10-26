@@ -27,6 +27,7 @@ param(
 # 1.6: Add system type check (workstation or server)
 # 1.6.1 Change error message on diskname parameter control
 # 1.7: change mail body and subject
+# 1.7.1: Change order of script execution
 #
 # =======================================================
 
@@ -231,9 +232,9 @@ $mail = @{
 
 # ======================== SCRIPT =======================
 
-if ($diskName -notmatch "^([a-zA-Z]:\\)$") { Write-Log "The disk name is not valid: please enter it like C:\" -LogLevel 'Error' }
-
 Write-Log "Starting script on $hostname ($(Get-SystemType)) at $(Get-Datetime)" 'Verbose'
+
+if ($diskName -notmatch "^([a-zA-Z]:\\)$") { Write-Log "The disk name is not valid: please enter it like C:\" -LogLevel 'Error' }
 
 if (!(Test-Path $diskName)) { Write-Log "The disk $diskName doesn't exist on the host $hostname" 'Warning' }
 else {
