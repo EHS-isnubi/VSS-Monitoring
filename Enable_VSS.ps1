@@ -7,8 +7,8 @@ param(
 #
 # NAME: Enable_VSS.ps1
 # AUTHOR: GAMBART Louis
-# DATE: 25/10/2022
-# VERSION 1.5.1
+# DATE: 26/10/2022
+# VERSION 1.5.2
 #
 # =======================================================
 #
@@ -23,6 +23,7 @@ param(
 # 1.4: Add function to write clean logs in the console
 # 1.5: Add control on the drive letter
 # 1.5.1: Pass the drive letter to the script
+# 1.5.2: Rename function Get-VSS-Status to Test-VSS
 #
 # =======================================================
 
@@ -125,7 +126,7 @@ function Write-Log {
 }
 
 
-function Get-VSS-Status {
+function Test-VSS {
     <#
     .SYNOPSIS
     Check if VSS is enabled on the host
@@ -136,7 +137,7 @@ function Get-VSS-Status {
     .OUTPUTS
     System.Boolean: return true if VSS is enabled on the host
     .EXAMPLE
-    Get-VSS-Status -DiskName "C:\"
+    Test-VSS -DiskName "C:\"
     True
     #>
     [CmdletBinding()]
@@ -202,12 +203,12 @@ Write-Log "Starting script on $hostname at $(Get-Datetime)" 'Verbose'
 
 if (!(Test-Path $diskName)) { Write-Log "The disk $diskName doesn't exist on the host $hostname" 'Warning' }
 else {
-    if (Get-VSS-Status -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is already enabled on $diskName" 'Information' }
+    if (Test-VSS -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is already enabled on $diskName" 'Information' }
     else {
         Write-Log "VSS is not enabled on $diskName" 'Information'
         Write-Log "Trying to enable VSS on $diskName" 'Verbose'
         Enable-VSS -DiskName $diskName
-        if (Get-VSS-Status -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is now enabled on $diskName" 'Information' }
+        if (Test-VSS -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is now enabled on $diskName" 'Information' }
         else {
             Write-Log "VSS couldn't be enabled on $diskName" 'Warning'
             try { Send-MailMessage @mail -Encoding $emailingEncoding }
