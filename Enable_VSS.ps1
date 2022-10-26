@@ -87,6 +87,31 @@ function Get-Datetime {
 }
 
 
+function Get-SystemType {
+    <#
+    .SYNOPSIS
+    Get the system type
+    .DESCRIPTION
+    Get the system type
+    .INPUTS
+    None
+    .OUTPUTS
+    System.String: The system type
+    .EXAMPLE
+    Get-SystemType | Out-String
+    Microsoft Windows Server 2016 Standard
+    #>
+    [CmdletBinding()]
+    param()
+    begin { $info = systeminfo /fo csv | ConvertFrom-Csv | Select-Object OS* }
+    process {
+        if ($info.'OS Name' -match "^(Microsoft Windows ?(Server))") { $SystemType = 'Server' }
+        else { $SystemType = 'Workstation' }
+    }
+    end { return $SystemType }
+}
+
+
 function Write-Log {
     <#
     .SYNOPSIS
@@ -199,7 +224,7 @@ function Enable-VSS {
 
 # ======================== SCRIPT =======================
 
-Write-Log "Starting script on $hostname at $(Get-Datetime)" 'Verbose'
+Write-Log "Starting script on $hostname ($(Get-SystemType)) at $(Get-Datetime)" 'Verbose'
 
 if (!(Test-Path $diskName)) { Write-Log "The disk $diskName doesn't exist on the host $hostname" 'Warning' }
 else {
