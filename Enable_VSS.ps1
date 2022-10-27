@@ -7,8 +7,8 @@ param(
 #
 # NAME: Enable_VSS.ps1
 # AUTHOR: GAMBART Louis
-# DATE: 26/10/2022
-# VERSION 1.8
+# DATE: 27/10/2022
+# VERSION 2.1
 #
 # =======================================================
 #
@@ -30,6 +30,9 @@ param(
 # 1.7.1: Change order of script execution
 # 1.7.2: Modify get system type function
 # 1.8: Add volume resize action when enabling VSS
+# 1.9: Adapt Get-SystemType for french and english
+# 2.0: Add creation of scheduled task to run shadow copy on the volume created
+# 2.1: Change Enable-VSS to get the output of WMI command to retrieve the volume ID
 #
 # =======================================================
 
@@ -96,11 +99,20 @@ function Get-SystemType {
     #>
     [CmdletBinding()]
     param()
-    begin { $info = systeminfo /fo csv | ConvertFrom-Csv | Select-Object OS* }
+    begin {}
     process {
-        if ($info.'OS Name' -match "^(Microsoft Windows ?(Server))") { return 'Server' }
-        elseif ($info.'OS Name' -match "^(Microsoft Windows ?([0-9]{1,2}))") { return 'Workstation' }
-        else { return 'Unknow' }
+        if ($PSUICulture.Name -eq "fr-FR") {
+            $info = systeminfo /fo csv | ConvertFrom-Csv | Select-Object Nom*
+            if ($info."Nom de l'hôte" -match "^(Microsoft Windows ?(Server))") { return 'Server' }
+            elseif ($info."Nom de l'hôte" -match "^(Microsoft Windows ?([0-9]{1,2}))") { return 'Workstation' }
+            else { return 'Unknow' }
+        }
+        else {
+            $info = systeminfo /fo csv | ConvertFrom-Csv | Select-Object OS*
+            if ($info.'OS Name' -match "^(Microsoft Windows ?(Server))") { return 'Server' }
+            elseif ($info.'OS Name' -match "^(Microsoft Windows ?([0-9]{1,2}))") { return 'Workstation' }
+            else { return 'Unknow' }
+        }
     }
     end {}
 }
@@ -175,7 +187,7 @@ function Test-VSS {
                         break
                     }
                 }
-            return $false
+                return $false
             }
         }
         else {
@@ -214,9 +226,47 @@ function Enable-VSS {
         [Parameter(Mandatory=$true, Position=1)]
         [String]$MaximumSize
     )
-    $VssWmi = Get-WmiObject -List Win32_ShadowCopy
-    $VssWmi.Create($DiskName, "ClientAccessible")
-    cmd.exe /c "vssadmin resize shadowstorage /for=$($DiskName.Substring(0,2)) /on=$($DiskName.Substring(0,2)) /maxsize=$MaximumSize"
+    begin { $VssWmi = Get-WmiObject -List Win32_ShadowCopy }
+    process {
+        $out = $VssWmi.Create($DiskName, "ClientAccessible")
+        cmd.exe /c "vssadmin resize shadowstorage /for=$($DiskName.Substring(0,2)) /on=$($DiskName.Substring(0,2)) /maxsize=$MaximumSize"
+    }
+    end { return $out }
+}
+
+
+function Create-VSS-Scheduled-Task {
+    <#
+    .SYNOPSIS
+    Create a scheduled task
+    .DESCRIPTION
+    Create a scheduled task to run VSS on the host
+    .INPUTS
+    System.String: DiskName
+    System.String: MaximumSize
+    .OUTPUTS
+    None.
+    #>
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true, Position=0)]
+        [String]$ShadowCopyVolumeID,
+        [Parameter(Mandatory=$true, Position=1)]
+        [String]$MaximumSize
+    )
+    begin {
+        write-host $ShadowCopyVolumeID
+        $TaskName = "ShadowCopyVolume" + $ShadowCopyVolumeID }
+    process {
+        $scheduledAction = New-ScheduledTaskAction -Execute 'C:\Windows\system32\vssadmin.exe' -Argument "Create Shadow /AutoRetry=15 /For\\?\Volume$ShadowCopyVolumeID" -WorkingDirectory 'C:\Windows\system32'
+        $scheduledTriggers = @(
+            New-ScheduledTaskTrigger -Daily -At 7:00AM
+            New-ScheduledTaskTrigger -Daily -At 00:00PM
+        )
+        $scheduledTask = New-ScheduledTask -Action $scheduledAction -Trigger $scheduledTriggers -Description "Run Shadow Copy on $($ShadowCopyVolumeID)"
+        Register-ScheduledTask -TaskName $TaskName -TaskPath "\" -InputObject $scheduledTask -User "SYSTEM"
+    }
+    end {}
 }
 
 
@@ -248,12 +298,16 @@ if ($diskName -notmatch "^([a-zA-Z]:\\)$") { Write-Log "The disk name is not val
 
 if (!(Test-Path $diskName)) { Write-Log "The disk $diskName doesn't exist on the host $hostname" 'Warning' }
 else {
-    if (Test-VSS -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is already enabled on $diskName" 'Information' }
+    if (!(Test-VSS -DiskName $diskName.Substring(0,1))) { Write-Log "VSS is already enabled on $diskName" 'Information' }
     else {
         Write-Log "VSS is not enabled on $diskName" 'Information'
         Write-Log "Trying to enable VSS on $diskName" 'Verbose'
-        Enable-VSS -DiskName $diskName -MaximumSize $maxVSSVolumeSize
-        if (Test-VSS -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is now enabled on $diskName" 'Information' }
+        $volumeID = (Enable-VSS -DiskName $diskName -MaximumSize $maxVSSVolumeSize).ShadowID | Out-String
+        if (Test-VSS -DiskName $diskName.Substring(0,1)) {
+            Write-Log "VSS is now enabled on $diskName" 'Information'
+            Create-VSS-Scheduled-Task -ShadowCopyVolumeID $volumeID.Replace("`n","").replace("`r","") -MaximumSize $maxVSSVolumeSize
+            Write-Log "VSS scheduled task created on $diskName" 'Information'
+        }
         else {
             Write-Log "VSS couldn't be enabled on $diskName" 'Warning'
             try { Send-MailMessage @mail -Encoding $emailingEncoding }
