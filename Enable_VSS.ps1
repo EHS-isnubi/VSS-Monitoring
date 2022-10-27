@@ -168,7 +168,7 @@ function Test-VSS {
     .OUTPUTS
     System.Boolean: return true if VSS is enabled on the host
     .EXAMPLE
-    Test-VSS -DiskName "C:\"
+    Test-VSS -DiskName "C"
     True
     #>
     [CmdletBinding()]
@@ -298,7 +298,7 @@ if ($diskName -notmatch "^([a-zA-Z]:\\)$") { Write-Log "The disk name is not val
 
 if (!(Test-Path $diskName)) { Write-Log "The disk $diskName doesn't exist on the host $hostname" 'Warning' }
 else {
-    if (!(Test-VSS -DiskName $diskName.Substring(0,1))) { Write-Log "VSS is already enabled on $diskName" 'Information' }
+    if (Test-VSS -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is already enabled on $diskName" 'Information' }
     else {
         Write-Log "VSS is not enabled on $diskName" 'Information'
         Write-Log "Trying to enable VSS on $diskName" 'Verbose'
