@@ -1,15 +1,21 @@
+#Requires -RunAsAdministrator
+param(
+    [Parameter(Mandatory=$true, Position=0)]
+    [string]$diskName
+)
 # =======================================================
 #
 # NAME: is_VSS_Enable_Centreon-Version.ps1
 # AUTHOR: GAMBART Louis
-# DATE: 21/10/2022
-# VERSION 1.0
+# DATE: 27/10/2022
+# VERSION 2.0
 #
 # =======================================================
 #
 # CHANGELOG
 #
 # 1.0: Initial version
+# 2.0: Rework to follow Enable_VSS script
 #
 # =======================================================
 
@@ -31,76 +37,77 @@ $vss = cmd.exe /c "vssadmin list ShadowStorage"
 # ====================== FUNCTIONS ======================
 
 
-function Get-VSS-Status {
+function Test-VSS {
     <#
     .SYNOPSIS
-    Check if VSS service is enable on a host
+    Check if VSS is enabled on the host
     .DESCRIPTION
-    The Get-VSS-Status function enable to know if the VSS service is enable on a host.
+    Check if VSS is enabled on the host through WMI Shadow Copy Object
     .INPUTS
-    vssadmin cmdlet query reply
+    System.String: DiskName
     .OUTPUTS
-    System.Int32: return 0 or 1 according to the status of the service
+    System.Boolean: return true if VSS is enabled on the host
+    .EXAMPLE
+    Test-VSS -DiskName "C"
+    True
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
-        $vss
+        [Parameter(Mandatory=$true, Position=0)]
+        [String]$DiskName
     )
-    if ($PSUICulture -eq "fr-FR") {
-        $vssMatch = "^(Il n'existe aucun )"
-    }
-    else {
-        $vssMatch = "No shadow copies are configured"
-    }
-
-    if ($vss -match $vssMatch) {
-        Write-Host "VSS is not enable"
-        return 1
-    }
-    else {
-        foreach ($line in $vss) {
-            if ($line -match "For volume: \((?<letter>[A-Z]):\)\\\\\?\\Volume{(?<volume>[a-z0-9-]+)}\\") {
-                $drive = $matches.letter
-                $volume = $matches.volume
+    begin { $vss = cmd.exe /c 'vssadmin list ShadowStorage' }
+    process {
+        if ($PSUICulture -eq "fr-FR") {
+            if ($vss -match "^(Il n'existe aucun )") { return $false }
+            else {
+                foreach ($line in $vss) {
+                    if ($line -match "Pour le volume : \(?($DiskName):\)\\\\\?\\Volume{(?<volume>[a-z0-9-]+)}\\") {
+                        return $true
+                        break
+                    }
+                }
+                return $false
             }
-            if ($line -match "Used Shadow Copy Storage space: (.*) GB") { $used = $matches[1] }
-            if ($line -match "Allocated Shadow Copy Storage space: (.*) GB") { $allocated = $matches[1] }
-            if ($line -match "Maximum Shadow Copy Storage space: (.*) GB") { $maximum = $matches[1]}
         }
-        Write-Host "VSS is enable on $drive drive and volume $volume"
-        Write-Host "Used space: $used GB"
-        Write-Host "Allocated space: $allocated GB"
-        Write-Host "Maximum space usable by VSS: $maximum"
-        return 0
+        else {
+            if ($vss -match "No shadow copies are configured") { return $false }
+            else {
+                foreach ($line in $vss) {
+                    if ($line -match "For volume: \(?($DiskName):\)\\\\\?\\Volume{(?<volume>[a-z0-9-]+)}\\") {
+                        return $true
+                        break
+                    }
+                }
+                return $false
+            }
+        }
     }
+    end {}
 }
 
 
 # ======================== SCRIPT =======================
 
-
-Write-Host "Starting script for $hostname"
-$result = Get-VSS-Status -vss $vss
+if ($diskName -match "^([a-zA-Z])$") {
+    if (Test-Path -Path $diskName":\")
+    {
+        Write-Host "Starting script for $hostname"
+        if (Test-VSS -DiskName $diskName) {
+            Write-Host "VSS is enable on this host"
+            exit 0
+        }
+        else {
+            Write-Host "VSS is not enable on this host"
+            exit 1
+        }
+    }
+    else { Write-Host "Disk $diskName does not exist on $hostname" }
+}
+else { Write-Host "Disk $diskName is not a valid disk name, enter it just as a letter, like C or E" }
 
 
 # ====================== END SCRIPT =====================
-
-
-
-# ========================= MAIL ========================
-
-
-# Send mail if VSS is not enable
-if ($result -eq 1)
-{
-    exit 1
-}
-else {
-    exit 0
-}
-
-# ======================= END MAIL ======================
 
 
 # ======================= CENTREON ======================
