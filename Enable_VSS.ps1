@@ -7,8 +7,8 @@ param(
 #
 # NAME: Enable_VSS.ps1
 # AUTHOR: GAMBART Louis
-# DATE: 27/10/2022
-# VERSION 2.1
+# DATE: 28/10/2022
+# VERSION 2.2
 #
 # =======================================================
 #
@@ -33,6 +33,8 @@ param(
 # 1.9: Adapt Get-SystemType for french and english
 # 2.0: Add creation of scheduled task to run shadow copy on the volume created
 # 2.1: Change Enable-VSS to get the output of WMI command to retrieve the volume ID
+# 2.2: Add function type in variables declaration
+# 2.2.1: Use approved verbs in function name
 #
 # =======================================================
 
@@ -45,16 +47,16 @@ param(
 $error.clear()
 
 # get the name of the host
-$hostname = $env:COMPUTERNAME
+[String] $hostname = $env:COMPUTERNAME
 
 # max VSS volume size
-$maxVSSVolumeSize = "500000MB"
+[String] $maxVSSVolumeSize = "500000MB"
 
 # mail variables
-$emailingTo = ""
-$emailingCc = ""
-$emailingFrom = ""
-$emailingSMTPServer = ""
+[String] $emailingTo = ""
+[String] $emailingCc = ""
+[String] $emailingFrom = ""
+[String] $emailingSMTPServer = ""
 $emailingEncoding = [System.Text.Encoding]::UTF8
 
 
@@ -235,7 +237,7 @@ function Enable-VSS {
 }
 
 
-function Create-VSS-Scheduled-Task {
+function Add-VSS-Scheduled-Task {
     <#
     .SYNOPSIS
     Create a scheduled task
@@ -305,7 +307,7 @@ else {
         $volumeID = (Enable-VSS -DiskName $diskName -MaximumSize $maxVSSVolumeSize).ShadowID | Out-String
         if (Test-VSS -DiskName $diskName.Substring(0,1)) {
             Write-Log "VSS is now enabled on $diskName" 'Information'
-            Create-VSS-Scheduled-Task -ShadowCopyVolumeID $volumeID.Replace("`n","").replace("`r","") -MaximumSize $maxVSSVolumeSize
+            Add-VSS-Scheduled-Task -ShadowCopyVolumeID $volumeID.Replace("`n","").replace("`r","") -MaximumSize $maxVSSVolumeSize
             Write-Log "VSS scheduled task created on $diskName" 'Information'
         }
         else {
