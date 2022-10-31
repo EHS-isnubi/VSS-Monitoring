@@ -9,7 +9,7 @@ param(
 #
 # AUTHOR             :     Louis GAMBART
 # CREATION DATE      :     2022.10.21
-# RELEASE            :     v2.3.0
+# RELEASE            :     v2.3.1
 # USAGE SYNTAX       :     .\Enable_VSS.ps1 -diskName "C:\"
 #
 # SCRIPT DESCRIPTION :     This script check if VSS is enable and try to enable it if it's not the case
@@ -39,6 +39,7 @@ param(
 # v2.2.0  2022.10.28 - Louis GAMBART - Add function type in variables declaration
 # v2.2.1  2022.10.28 - Louis GAMBART - Use approved verbs in function name
 # v2.3.0  2022.10.31 - Louis GAMBART - Change script header and commentary blocks
+# v2.3.1  2022.10.31 - Louis GAMBART - Add variable type for $emailingEncoding
 #
 #==========================================================================================
 
@@ -63,7 +64,7 @@ $error.clear()
 [String] $emailingCc = ""
 [String] $emailingFrom = ""
 [String] $emailingSMTPServer = ""
-$emailingEncoding = [System.Text.Encoding]::UTF8
+[UTF8Encoding] $emailingEncoding = [System.Text.Encoding]::UTF8
 
 
 ####################
