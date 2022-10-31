@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 param(
-[Parameter(Mandatory=$true, Position=0)]
-[string]$diskName
+    [Parameter(Mandatory=$true, Position=0)]
+    [string]$diskName
 )
 #==========================================================================================
 #
