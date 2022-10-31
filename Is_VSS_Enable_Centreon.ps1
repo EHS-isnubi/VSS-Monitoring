@@ -20,6 +20,8 @@ param(
 # 1.0.0  2022.10.21 - Louis GAMBART - Initial version
 # 2.0.0  2022.10.27 - Louis GAMBART - Rework to follow Enable_VSS script
 # 2.1.0  2022.10.31 - Louis GAMBART - Rework script header and commentary blocks
+# 2.1.1  2022.10.31 - Louis GAMBART - Remove useless cmdlet variable (usage of begin block in function)
+# 2.1.2  2022.10.31 - Louis GAMBART - Standardization of commentary blocks
 #
 #==========================================================================================
 
@@ -35,9 +37,6 @@ $error.clear()
 
 # get the name of the host
 $hostname = $env:COMPUTERNAME
-
-# cmdlet to execute
-$vss = cmd.exe /c "vssadmin list ShadowStorage"
 
 
 ####################
@@ -120,17 +119,17 @@ if ($diskName -match "^([a-zA-Z])$") {
 else { Write-Host "Disk $diskName is not a valid disk name, enter it just as a letter, like C or E" }
 
 
-################
-#              #
-#  SCRIPT END  #
-#              #
-################
+####################
+#                  #
+# IV - SCRIPT END  #
+#                  #
+####################
 
-##############
-#            #
-#  CENTREON  #
-#            #
-##############
+############################
+#                          #
+#  V - CENTREON EXIT CODE  #
+#                          #
+############################
 
 # 0 = OK
 # 1 = WARNING
