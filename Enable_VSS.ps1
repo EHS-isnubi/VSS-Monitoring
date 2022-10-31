@@ -3,45 +3,51 @@ param(
     [Parameter(Mandatory=$true, Position=0)]
     [string]$diskName
 )
-# =======================================================
+#==========================================================================================
 #
-# NAME: Enable_VSS.ps1
-# AUTHOR: GAMBART Louis
-# DATE: 28/10/2022
-# VERSION 2.2
+# SCRIPT NAME        :     Enable_VSS.ps1
 #
-# =======================================================
+# AUTHOR             :     Louis GAMBART
+# CREATION DATE      :     2022.10.21
+# RELEASE            :     v2.2.1
+# USAGE SYNTAX       :     .\Enable_VSS.ps1
 #
-# CHANGELOG
+# SCRIPT DESCRIPTION :     This script check if VSS is enable and try to enable it if it's not the case
 #
-# 1.0: Initial version
-# 1.1: Change to work on all Windows versions (not only on windows server)
-# 1.2: Add mail notification if VSS couldn't be enabled
-# 1.3: Add begin, process and end blocks to the functions
-# 1.3.1: Add try/catch for the mail sending
-# 1.3.2: Add datetime to the mail body and console output
-# 1.4: Add function to write clean logs in the console
-# 1.5: Add control on the drive letter
-# 1.5.1: Pass the drive letter to the script
-# 1.5.2: Rename function Get-VSS-Status to Test-VSS
-# 1.6: Add system type check (workstation or server)
-# 1.6.1 Change error message on diskname parameter control
-# 1.7: change mail body and subject
-# 1.7.1: Change order of script execution
-# 1.7.2: Modify get system type function
-# 1.8: Add volume resize action when enabling VSS
-# 1.9: Adapt Get-SystemType for french and english
-# 2.0: Add creation of scheduled task to run shadow copy on the volume created
-# 2.1: Change Enable-VSS to get the output of WMI command to retrieve the volume ID
-# 2.2: Add function type in variables declaration
-# 2.2.1: Use approved verbs in function name
+#==========================================================================================
+
+#                 - RELEASE NOTES -
+# v1.0.0  2022.10.21 - Louis GAMBART - Initial version
+# v1.1.0  2022.10.24 - Louis GAMBART - Change to work on all Windows versions (not only on windows server)
+# v1.2.0  2022.10.24 - Louis GAMBART - Add mail notification if VSS couldn't be enabled
+# v1.3.0  2022.10.25 - Louis GAMBART - Add begin, process and end blocks to the functions
+# v1.3.1  2022.10.25 - Louis GAMBART - Add try/catch for the mail sending
+# v1.3.2  2022.10.25 - Louis GAMBART - Add datetime to the mail body and console output
+# v1.4.0  2022.10.25 - Louis GAMBART - Add function to write clean logs in the console
+# v1.5.0  2022.10.25 - Louis GAMBART - Add control on the drive letter
+# v1.5.1  2022.10.25 - Louis GAMBART - Pass the drive letter to the script
+# v1.5.2  2022.10.26 - Louis GAMBART - Rename function Get-VSS-Status to Test-VSS
+# v1.6.0  2022.10.26 - Louis GAMBART - Add system type check (workstation or server)
+# v1.6.1  2022.10.26 - Louis GAMBART - Change error message on diskname parameter control
+# v1.7.0  2022.10.26 - Louis GAMBART - change mail body and subject
+# v1.7.1  2022.10.26 - Louis GAMBART - Change order of script execution
+# v1.7.2  2022.10.26 - Louis GAMBART - Modify get system type function
+# v1.8.0  2022.10.26 - Louis GAMBART - Add volume resize action when enabling VSS
+# v1.9.0  2022.10.27 - Louis GAMBART - Adapt Get-SystemType for french and english
+# v2.0.0  2022.10.27 - Louis GAMBART - Add creation of scheduled task to run shadow copy on the volume created
+# v2.1.0  2022.10.27 - Louis GAMBART - Change Enable-VSS to get the output of WMI command to retrieve the volume ID
+# v2.2.0  2022.10.28 - Louis GAMBART - Add function type in variables declaration
+# v2.2.1  2022.10.28 - Louis GAMBART - Use approved verbs in function name
+# v2.3.0  2022.10.31 - Louis GAMBART - Change script header and commentary blocks
 #
-# =======================================================
+#==========================================================================================
 
 
-
-# ====================== VARIABLES ======================
-
+###################
+#                 #
+#  I - VARIABLES  #
+#                 #
+###################
 
 # clear error variable
 $error.clear()
@@ -60,8 +66,11 @@ $error.clear()
 $emailingEncoding = [System.Text.Encoding]::UTF8
 
 
-# ====================== FUNCTIONS ======================
-
+####################
+#                  #
+#  II - FUNCTIONS  #
+#                  #
+####################
 
 function Get-Datetime {
     <#
@@ -272,7 +281,11 @@ function Add-VSS-Scheduled-Task {
 }
 
 
-# ====================== MAIL ARGS ======================
+#####################
+#                   #
+#  III - MAIL ARGS  #
+#                   #
+#####################
 
 
 # mail attributes
@@ -292,7 +305,11 @@ $mail = @{
 }
 
 
-# ======================== SCRIPT =======================
+##########################
+#                        #
+#  IV - SCRIPT EXECUTION #
+#                        #
+##########################
 
 Write-Log "Starting script on $hostname ($(Get-SystemType)) at $(Get-Datetime)" 'Verbose'
 
@@ -320,4 +337,8 @@ else {
 }
 
 
-# ====================== END SCRIPT =====================
+################
+#              #
+#  SCRIPT END  #
+#              #
+################
