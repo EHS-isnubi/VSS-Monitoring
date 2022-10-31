@@ -1,28 +1,34 @@
 #Requires -RunAsAdministrator
 param(
-    [Parameter(Mandatory=$true, Position=0)]
-    [string]$diskName
+[Parameter(Mandatory=$true, Position=0)]
+[string]$diskName
 )
-# =======================================================
+#==========================================================================================
 #
-# NAME: is_VSS_Enable_Centreon-Version.ps1
-# AUTHOR: GAMBART Louis
-# DATE: 27/10/2022
-# VERSION 2.0
+# SCRIPT NAME        :     is_VSS_Enable_Centreon.ps1
 #
-# =======================================================
+# AUTHOR             :     Louis GAMBART
+# CREATION DATE      :     2022.10.21
+# RELEASE            :     v2.0.0
+# USAGE SYNTAX       :     .\is_VSS_Enable_Centreon.ps1 -diskName "C"
 #
-# CHANGELOG
+# SCRIPT DESCRIPTION :     This script check if VSS is enable and send exit code to Centreon
 #
-# 1.0: Initial version
-# 2.0: Rework to follow Enable_VSS script
+#==========================================================================================
 #
-# =======================================================
+#                 - RELEASE NOTES -
+# 1.0.0  2022.10.21 - Louis GAMBART - Initial version
+# 2.0.0  2022.10.27 - Louis GAMBART - Rework to follow Enable_VSS script
+# 2.1.0  2022.10.31 - Louis GAMBART - Rework script header and commentary blocks
+#
+#==========================================================================================
 
 
-
-# ====================== VARIABLES ======================
-
+###################
+#                 #
+#  I - VARIABLES  #
+#                 #
+###################
 
 # clear $error variable
 $error.clear()
@@ -34,8 +40,11 @@ $hostname = $env:COMPUTERNAME
 $vss = cmd.exe /c "vssadmin list ShadowStorage"
 
 
-# ====================== FUNCTIONS ======================
-
+####################
+#                  #
+#  II - FUNCTIONS  #
+#                  #
+####################
 
 function Test-VSS {
     <#
@@ -87,7 +96,11 @@ function Test-VSS {
 }
 
 
-# ======================== SCRIPT =======================
+############################
+#                          #
+#  III - SCRIPT EXECUTION  #
+#                          #
+############################
 
 if ($diskName -match "^([a-zA-Z])$") {
     if (Test-Path -Path $diskName":\")
@@ -107,10 +120,17 @@ if ($diskName -match "^([a-zA-Z])$") {
 else { Write-Host "Disk $diskName is not a valid disk name, enter it just as a letter, like C or E" }
 
 
-# ====================== END SCRIPT =====================
+################
+#              #
+#  SCRIPT END  #
+#              #
+################
 
-
-# ======================= CENTREON ======================
+##############
+#            #
+#  CENTREON  #
+#            #
+##############
 
 # 0 = OK
 # 1 = WARNING
