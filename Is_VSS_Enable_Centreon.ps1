@@ -9,7 +9,7 @@ param(
 #
 # AUTHOR             :     Louis GAMBART
 # CREATION DATE      :     2022.10.21
-# RELEASE            :     v2.0.0
+# RELEASE            :     v2.1.2
 # USAGE SYNTAX       :     .\is_VSS_Enable_Centreon.ps1 -diskName "C"
 #
 # SCRIPT DESCRIPTION :     This script check if VSS is enable and send exit code to Centreon
