@@ -305,11 +305,11 @@ $mail = @{
 }
 
 
-##########################
-#                        #
-#  IV - SCRIPT EXECUTION #
-#                        #
-##########################
+###########################
+#                         #
+#  IV - SCRIPT EXECUTION  #
+#                         #
+###########################
 
 Write-Log "Starting script on $hostname ($(Get-SystemType)) at $(Get-Datetime)" 'Verbose'
 
