@@ -102,8 +102,7 @@ function Test-VSS {
 ############################
 
 if ($diskName -match "^([a-zA-Z])$") {
-    if (Test-Path -Path $diskName":\")
-    {
+    if (Test-Path -Path $diskName":\") {
         Write-Host "Starting script for $hostname"
         if (Test-VSS -DiskName $diskName) {
             Write-Host "VSS is enable on this host"
@@ -118,12 +117,6 @@ if ($diskName -match "^([a-zA-Z])$") {
 }
 else { Write-Host "Disk $diskName is not a valid disk name, enter it just as a letter, like C or E" }
 
-
-####################
-#                  #
-# IV - SCRIPT END  #
-#                  #
-####################
 
 ############################
 #                          #
