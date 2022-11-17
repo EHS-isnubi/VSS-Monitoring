@@ -1,4 +1,4 @@
-#Requires -RunAsAdministrator
+﻿#Requires -RunAsAdministrator
 param(
     [Parameter(Mandatory=$true, Position=0)]
     [string]$diskName
@@ -8,8 +8,8 @@ param(
 # SCRIPT NAME        :     Enable_VSS.ps1
 #
 # AUTHOR             :     Louis GAMBART
-# CREATION DATE      :     2022.10.21
-# RELEASE            :     v2.3.1
+# CREATION DATE      :     2022.11.18
+# RELEASE            :     v2.4.0
 # USAGE SYNTAX       :     .\Enable_VSS.ps1 -diskName "C:\"
 #
 # SCRIPT DESCRIPTION :     This script check if VSS is enable and try to enable it if it's not the case
@@ -40,6 +40,7 @@ param(
 # v2.2.1  2022.10.28 - Louis GAMBART - Use approved verbs in function name
 # v2.3.0  2022.10.31 - Louis GAMBART - Change script header and commentary blocks
 # v2.3.1  2022.10.31 - Louis GAMBART - Add variable type for $emailingEncoding
+# v2.4.0  2022.11.18 - Louis GAMBART - Rework file to fix warnings/informations given by PSScriptAnalyzer
 #
 #==========================================================================================
 
@@ -88,6 +89,7 @@ function Get-Datetime {
     2022-10-24 10:00:00
     #>
     [CmdletBinding()]
+    [OutputType([System.DateTime])]
     param()
     begin {}
     process { return [DateTime]::Now }
@@ -110,13 +112,14 @@ function Get-SystemType {
     Server
     #>
     [CmdletBinding()]
+    [OutputType([System.String])]
     param()
     begin {}
     process {
         if ($PSUICulture.Name -eq "fr-FR") {
             $info = systeminfo /fo csv | ConvertFrom-Csv | Select-Object Nom*
-            if ($info."Nom de l'hôte" -match "^(Microsoft Windows ?(Server))") { return 'Server' }
-            elseif ($info."Nom de l'hôte" -match "^(Microsoft Windows ?([0-9]{1,2}))") { return 'Workstation' }
+            if ($info."Nom de l'hÃ´te" -match "^(Microsoft Windows ?(Server))") { return 'Server' }
+            elseif ($info."Nom de l'hÃ´te" -match "^(Microsoft Windows ?([0-9]{1,2}))") { return 'Workstation' }
             else { return 'Unknow' }
         }
         else {
@@ -238,7 +241,7 @@ function Enable-VSS {
         [Parameter(Mandatory=$true, Position=1)]
         [String]$MaximumSize
     )
-    begin { $VssWmi = Get-WmiObject -List Win32_ShadowCopy }
+    begin { $VssWmi = Get-CimClass -ClassName Win32_ShadowCopy }
     process {
         $out = $VssWmi.Create($DiskName, "ClientAccessible")
         cmd.exe /c "vssadmin resize shadowstorage /for=$($DiskName.Substring(0,2)) /on=$($DiskName.Substring(0,2)) /maxsize=$MaximumSize"
@@ -262,12 +265,9 @@ function Add-VSS-Scheduled-Task {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true, Position=0)]
-        [String]$ShadowCopyVolumeID,
-        [Parameter(Mandatory=$true, Position=1)]
-        [String]$MaximumSize
+        [String]$ShadowCopyVolumeID
     )
     begin {
-        write-host $ShadowCopyVolumeID
         $TaskName = "ShadowCopyVolume" + $ShadowCopyVolumeID }
     process {
         $scheduledAction = New-ScheduledTaskAction -Execute 'C:\Windows\system32\vssadmin.exe' -Argument "Create Shadow /AutoRetry=15 /For\\?\Volume$ShadowCopyVolumeID" -WorkingDirectory 'C:\Windows\system32'
@@ -325,7 +325,7 @@ else {
         $volumeID = (Enable-VSS -DiskName $diskName -MaximumSize $maxVSSVolumeSize).ShadowID | Out-String
         if (Test-VSS -DiskName $diskName.Substring(0,1)) {
             Write-Log "VSS is now enabled on $diskName" 'Information'
-            Add-VSS-Scheduled-Task -ShadowCopyVolumeID $volumeID.Replace("`n","").replace("`r","") -MaximumSize $maxVSSVolumeSize
+            Add-VSS-Scheduled-Task -ShadowCopyVolumeID $volumeID.Replace("`n","").replace("`r","")
             Write-Log "VSS scheduled task created on $diskName" 'Information'
         }
         else {
