@@ -290,7 +290,7 @@ function Add-VSS-Scheduled-Task {
 
 
 # mail attributes
-$mail = @{
+$emailingArgs = @{
     To = $emailingTo
     Cc = $emailingCc
     From = $emailingFrom
@@ -314,26 +314,25 @@ $mail = @{
 
 Write-Log "Starting script on $hostname ($(Get-SystemType)) at $(Get-Datetime)" 'Verbose'
 
-if ($diskName -notmatch "^([a-zA-Z]:\\)$") { Write-Log "The disk name is not valid: please enter it like C:\" -LogLevel 'Error' }
+if ($diskName -notmatch "^([a-zA-Z]:\\)$") { Write-Log "The disk name is not valid: please enter it like C:\" 'Error' }
 
-if (!(Test-Path $diskName)) { Write-Log "The disk $diskName doesn't exist on the host $hostname" 'Warning' }
+if (!(Test-Path $diskName)) { Write-Log "The disk $diskName doesn't exist on the host $hostname" 'Error' }
+
+if (Test-VSS -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is already enabled on $diskName" 'Information' }
 else {
-    if (Test-VSS -DiskName $diskName.Substring(0,1)) { Write-Log "VSS is already enabled on $diskName" 'Information' }
+    Write-Log "VSS is not enabled on $diskName" 'Information'
+    Write-Log "Trying to enable VSS on $diskName" 'Verbose'
+    $volumeID = (Enable-VSS -DiskName $diskName -MaximumSize $maxVSSVolumeSize).ShadowID | Out-String
+    if (Test-VSS -DiskName $diskName.Substring(0,1)) {
+        Write-Log "VSS is now enabled on $diskName" 'Information'
+        Add-VSS-Scheduled-Task -ShadowCopyVolumeID $volumeID.Replace("`n","").replace("`r","")
+        Write-Log "VSS scheduled task created on $diskName" 'Information'
+    }
     else {
-        Write-Log "VSS is not enabled on $diskName" 'Information'
-        Write-Log "Trying to enable VSS on $diskName" 'Verbose'
-        $volumeID = (Enable-VSS -DiskName $diskName -MaximumSize $maxVSSVolumeSize).ShadowID | Out-String
-        if (Test-VSS -DiskName $diskName.Substring(0,1)) {
-            Write-Log "VSS is now enabled on $diskName" 'Information'
-            Add-VSS-Scheduled-Task -ShadowCopyVolumeID $volumeID.Replace("`n","").replace("`r","")
-            Write-Log "VSS scheduled task created on $diskName" 'Information'
-        }
-        else {
-            Write-Log "VSS couldn't be enabled on $diskName" 'Warning'
-            try { Send-MailMessage @mail -Encoding $emailingEncoding }
-            catch { Write-Log "Error while sending mail: $_" 'Error' }
-            if (!$error) { Write-Log "Mail sent" 'Verbose' }
-        }
+        Write-Log "VSS couldn't be enabled on $diskName" 'Warning'
+        try { Send-MailMessage @emailingArgs -Encoding $emailingEncoding }
+        catch { Write-Log "Error while sending mail: $_" 'Error' }
+        if (!$error) { Write-Log "Mail sent" 'Verbose' }
     }
 }
 
