@@ -9,7 +9,7 @@ param(
 #
 # AUTHOR             :     Louis GAMBART
 # CREATION DATE      :     2022.10.21
-# RELEASE            :     v2.3.1
+# RELEASE            :     v2.4.0
 # USAGE SYNTAX       :     .\check_vss.ps1 -diskName "C"
 #
 # SCRIPT DESCRIPTION :     This script check if VSS is enable and send exit code and output to Centreon
@@ -27,6 +27,7 @@ param(
 # v2.2.2  2023.07.04 - Louis GAMBART - Add error handler
 # v2.3.0  2023.07.04 - Louis GAMBART - Add output for Centreon
 # v2.3.1  2023.07.05 - Louis GAMBART - Change invalid disk name from error to unknown
+# v2.4.0  2023.07.05 - Louis GAMBART - Remove useless function
 #
 #==========================================================================================
 
@@ -58,69 +59,6 @@ $error.clear()
 #  II - FUNCTIONS  #
 #                  #
 ####################
-
-function Get-Datetime {
-    <#
-    .SYNOPSIS
-    Get the current date and time
-    .DESCRIPTION
-    Get the current date and time
-    .INPUTS
-    None
-    .OUTPUTS
-    System.DateTime: The current date and time
-    .EXAMPLE
-    Get-Datetime | Out-String
-    2022-10-24 10:00:00
-    #>
-    [CmdletBinding()]
-    [OutputType([System.DateTime])]
-    param()
-    begin {}
-    process { return [DateTime]::Now }
-    end {}
-}
-
-
-function Write-Log {
-    <#
-    .SYNOPSIS
-    Write log message in the console
-    .DESCRIPTION
-    Write log message in the console
-    .INPUTS
-    System.String: The message to write
-    System.String: The log level
-    .OUTPUTS
-    None
-    .EXAMPLE
-    Write-Log "Hello world" "Verbose"
-    VERBOSE: Hello world
-    #>
-    [CmdletBinding()]
-    [OutputType([void])]
-    param(
-        [Parameter(Mandatory = $true, Position = 0)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Message,
-        [Parameter(Mandatory = $false, Position = 1)]
-        [ValidateSet('Error', 'Warning', 'Information', 'Verbose', 'Debug')]
-        [string]$LogLevel = 'Information'
-    )
-    begin {}
-    process {
-        switch ($LogLevel) {
-            'Error' { Write-Error $Message -ErrorAction Stop }
-            'Warning' { Write-Warning $Message -WarningAction Continue }
-            'Information' { Write-Information $Message -InformationAction Continue }
-            'Verbose' { Write-Verbose $Message -Verbose }
-            'Debug' { Write-Debug $Message -Debug Continue }
-            default { throw "Invalid log level: $_" }
-        }
-    }
-    end {}
-}
-
 
 function Test-VSS {
     <#
