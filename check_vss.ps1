@@ -9,8 +9,8 @@ param(
 #
 # AUTHOR             :     Louis GAMBART
 # CREATION DATE      :     2022.10.21
-# RELEASE            :     v2.4.0
-# USAGE SYNTAX       :     .\check_vss.ps1 -diskName "C"
+# RELEASE            :     v2.4.1
+# USAGE SYNTAX       :     .\check_vss.ps1 "D"
 #
 # SCRIPT DESCRIPTION :     This script check if VSS is enable and send exit code and output to Centreon
 #
@@ -28,6 +28,7 @@ param(
 # v2.3.0  2023.07.04 - Louis GAMBART - Add output for Centreon
 # v2.3.1  2023.07.05 - Louis GAMBART - Change invalid disk name from error to unknown
 # v2.4.0  2023.07.05 - Louis GAMBART - Remove useless function
+# v2.4.1  2023.07.09 - Louis GAMBART - Update Centreon output
 #
 #==========================================================================================
 
@@ -43,9 +44,6 @@ $error.clear()
 
 # host name
 [String] $hostname = $env:COMPUTERNAME
-
-# centreon output string
-[String] $output = ""
 
 # centreon exit code
 # 0 = OK
@@ -137,32 +135,24 @@ trap {
 if ($diskName -match "^([a-zA-Z])$") {
     if (Test-Path -Path $diskName":\") {
         if (Test-VSS -DiskName $diskName) {
-            $output += "OK: VSS is enable"
-            $output += "<b>\n"
-            $output += "\nVSS is enable on $hostname for disk $diskName"
-            Write-Output $output
+            $outLog = @("OK: VSS is enable", "VSS is enable on $hostname for disk $diskName")
+            Write-Output $outLog
             exit 0
         }
         else {
-            $output += "WARNING: VSS is disable"
-            $output += "<b>\n"
-            $output += "\nVSS is disable on $hostname for disk $diskName"
-            Write-Output $output
+            $outLog = @("WARNING: VSS is not enable", "VSS is not enable on $hostname for disk $diskName")
+            Write-Output $outLog
             exit 1
         }
     }
     else {
-        $output += "CRITICAL: Disk $diskName does not exist"
-        $output += "<b>\n"
-        $output += "\nDisk $diskName does not exist on $hostname"
-        Write-Output $output
+        $outLog = @("CRITICAL: Disk $diskName does not exist", "Disk $diskName does not exist on $hostname")
+        Write-Output $outLog
         exit 2
     }
 }
 else {
-    $output += "UNKNOW: Disk $diskName is not a valid disk name"
-    $output += "<b>\n"
-    $output += "\nDisk $diskName is not a valid disk name on $hostname, enter it just as a letter, like C or E"
-    Write-Output $output
+    $outLog = @("UNKNOWN: Disk $diskName is not a valid disk name", "Disk $diskName is not a valid disk name on $hostname, enter it just as a letter, like C or E")
+    Write-Output $outLog
     exit 3
 }
