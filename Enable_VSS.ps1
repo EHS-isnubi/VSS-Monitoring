@@ -9,8 +9,8 @@ param(
 #
 # AUTHOR             :     Louis GAMBART
 # CREATION DATE      :     2022.11.18
-# RELEASE            :     v2.4.0
-# USAGE SYNTAX       :     .\Enable_VSS.ps1 -diskName "C:\"
+# RELEASE            :     v2.5.1
+# USAGE SYNTAX       :     .\Enable_VSS.ps1 -diskName "D:\"
 #
 # SCRIPT DESCRIPTION :     This script check if VSS is enable and try to enable it if it's not the case
 #
@@ -41,6 +41,8 @@ param(
 # v2.3.0  2022.10.31 - Louis GAMBART - Change script header and commentary blocks
 # v2.3.1  2022.10.31 - Louis GAMBART - Add variable type for $emailingEncoding
 # v2.4.0  2022.11.18 - Louis GAMBART - Rework file to fix warnings/informations given by PSScriptAnalyzer
+# v2.5.0  2023.07.05 - Louis GAMBART - Update Get-Datetime function to accept format string
+# v2.5.1  2023.07.05 - Louis GAMBART - Update Get-SystemType function to be based on CmiInstance and not on language (french or english)
 #
 #==========================================================================================
 
@@ -79,20 +81,30 @@ function Get-Datetime {
     .SYNOPSIS
     Get the current date and time
     .DESCRIPTION
-    Get the current date and time
+    Get the current date and time, optionally formatted as a string
     .INPUTS
-    None
+    System.String: The format string
     .OUTPUTS
-    System.DateTime: The current date and time
+    System.String: The formatted date and time
     .EXAMPLE
-    Get-Datetime | Out-String
-    2022-10-24 10:00:00
+    Get-Datetime -Format "yyyy-MM-dd HH:mm:ss"
+    2021-07-04 12:00:00
     #>
     [CmdletBinding()]
-    [OutputType([System.DateTime])]
-    param()
+    [OutputType([System.String])]
+    param(
+        [Parameter(Mandatory = $false, Position = 0)]
+        [string]$Format
+    )
     begin {}
-    process { return [DateTime]::Now }
+    process {
+        if ([string]::IsNullOrEmpty($Format)) {
+            return [DateTime]::Now
+        }
+        else {
+            return [DateTime]::Now.ToString($format)
+        }
+    }
     end {}
 }
 
@@ -114,20 +126,11 @@ function Get-SystemType {
     [CmdletBinding()]
     [OutputType([System.String])]
     param()
-    begin {}
+    begin { $osInfo = Get-CimInstance Win32_OperatingSystem }
     process {
-        if ($PSUICulture.Name -eq "fr-FR") {
-            $info = systeminfo /fo csv | ConvertFrom-Csv | Select-Object Nom*
-            if ($info."Nom de l'hÃ´te" -match "^(Microsoft Windows ?(Server))") { return 'Server' }
-            elseif ($info."Nom de l'hÃ´te" -match "^(Microsoft Windows ?([0-9]{1,2}))") { return 'Workstation' }
-            else { return 'Unknow' }
-        }
-        else {
-            $info = systeminfo /fo csv | ConvertFrom-Csv | Select-Object OS*
-            if ($info.'OS Name' -match "^(Microsoft Windows ?(Server))") { return 'Server' }
-            elseif ($info.'OS Name' -match "^(Microsoft Windows ?([0-9]{1,2}))") { return 'Workstation' }
-            else { return 'Unknow' }
-        }
+        if ($osInfo.ProductType -eq 1) { return "Workstation" }
+        elseif ($osInfo.ProductType -eq 2 -or $osInfo.ProductType -eq 3) { return "Server" }
+        else { return "Unknown" }
     }
     end {}
 }
