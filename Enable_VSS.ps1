@@ -15,7 +15,7 @@ param(
 # SCRIPT DESCRIPTION :     This script check if VSS is enable and try to enable it if it's not the case
 #
 #==========================================================================================
-
+#
 #                 - RELEASE NOTES -
 # v1.0.0  2022.10.21 - Louis GAMBART - Initial version
 # v1.1.0  2022.10.24 - Louis GAMBART - Change to work on all Windows versions (not only on windows server)
